@@ -6,7 +6,6 @@
 // @include         http*://*bungie.net/*createpost.aspx*
 // @author          Shou
 // @copyright       2012, Shou
-// @require	        http://code.jquery.com/jquery-1.8.1.min.js
 // @license	        (CC) Attribution Non-Commercial Share Alike; http://creativecommons.org/licenses/by-nc-sa/3.0/
 // ==/UserScript==
 
@@ -31,6 +30,7 @@
 
 // FIXME:
 // - Words in URLs are replaced as well. This is a cute butt.
+//      - Split on words and do not replace the word if it contains an URL.
 
 var storage = "text_replace0";
 var matchtypes = ["regex", "regular"];
