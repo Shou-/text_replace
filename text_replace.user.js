@@ -30,7 +30,7 @@
 //      - Regular (escaped regex)
 
 // FIXME:
-
+// - Words in URLs are replaced as well. This is a cute butt.
 
 var storage = "text_replace0";
 var matchtypes = ["regex", "regular"];
@@ -249,9 +249,9 @@ function uncensor(){
     }
     if (window.location.href.match(/https?:\/\/\S+.bungie.net\/fanclub/i)){
         console.log("Swear words!");
-        for (i in dict[t]){
+        for (i in swearWords){
             var match = new RegExp(escapeRegExp(i), "ig");
-            txt = txt.replace(match, c(flip(copyCase), dict[t][i]));
+            txt = txt.replace(match, c(flip(copyCase), swearWords[t][i]));
         }
     }
     elem.value = txt;
