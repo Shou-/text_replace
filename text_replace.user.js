@@ -262,8 +262,8 @@ function uncensor(){
 function bindings(){
     var previewButton = document.getElementById("ctl00_mainContent_postForm_skin_previewButton");
     var submitButton = document.getElementById("ctl00_mainContent_postForm_skin_previewButton");
-    previewButton.addEventListener("click", uncensor);
-    submitButton.addEventListener("click", uncensor);
+    var textArea = document.getElementById("ctl00_mainContent_postForm_skin_body");
+    textArea.addEventListener("blur", uncensor);
 }
 
 // main :: IO ()
