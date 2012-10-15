@@ -251,7 +251,7 @@ function uncensor(){
         console.log("Swear words!");
         for (i in swearWords){
             var match = new RegExp(escapeRegExp(i), "ig");
-            txt = txt.replace(match, c(flip(copyCase), swearWords[t][i]));
+            txt = txt.replace(match, c(flip(copyCase), swearWords[i]));
         }
     }
     elem.value = txt;
