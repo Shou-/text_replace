@@ -1,0 +1,5 @@
+This script replaces text on the blur event of the textarea on Bungie.net when making a new post.
+
+For example, "What the hell? Damn it, guys." could become "What the Gensokyo? Kiss it, girls.".
+
+The curse word list in the script will not be used when in the public forums.
