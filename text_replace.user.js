@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name            text_replace
-// @namespace       --
+// @namespace       https://github.com/Shou-/text_replace
 // @description     Replace text on submit on Bungie.net
-// @version         0.1
+// @version         0.39
 // @include         http*://*bungie.net/*createpost.aspx*
 // @author          Shou
 // @copyright       2012, Shou
 // @license	        (CC) Attribution Non-Commercial Share Alike; http://creativecommons.org/licenses/by-nc-sa/3.0/
+// @updateURL       https://github.com/Shou-/text_replace/raw/master/text_replace.user.js
 // ==/UserScript==
 
 
@@ -14,23 +15,13 @@
 // and you are very likely to be warned and/or banned.
 
 // TODO:
-// - Add a way to toggle replacement of swear words and/or user added words.
-// - Add a way to add word replacements, store in localStorage.
-// - Export/import swear word dictionaries.
-// - Case insensitive matching.
-//      - RegExp for case insensitive matching, escape the strings
-//      - toCaseResult() will not work for anything other than swear words.
-//          - We need to match the old String's case against the new one and
-//            add according to that.
 // - Random/several replacements.
-// - S-stu-stuttering.
-// - Match modes
-//      - Regex
-//      - Regular (escaped regex)
 
 // FIXME:
 // - Words in URLs are replaced as well. This is a cute butt.
 //      - Split on words and do not replace the word if it contains an URL.
+//      - Alternatively, strip 0x00ad characters from words matching http.
+//      - Alternatively, strip 0x00ad characters within brackets, [].
 
 var storage = "text_replace0";
 var matchtypes = ["regex", "regular"];
@@ -81,7 +72,7 @@ swearWords["gay"] = "g­ay";
 swearWords["gook"] = "g­ook";
 swearWords["hentai"] = "h­entai";
 swearWords["homo"] = "h­omo";
-swearWords["kkk"] = "k­kk";
+swearWords["kkk"] = "k­k­k";
 swearWords["klan"] = "k­lan";
 swearWords["lemonparty"] = "l­emonparty";
 swearWords["lesbian"] = "l­esbian";
@@ -125,7 +116,52 @@ swearWords["tubgirl"] = "t­ubgirl";
 swearWords["vagina"] = "v­agina";
 swearWords["vulva"] = "v­ulva";
 
-buttonsElem = "<div class=formgroup3><input type=button id=";
+examples = "Regular:\\n\
+banana → apple\\n\
+fuck → hold hands\\n\\n\
+\
+Regex:\\n\
+/banana/ig → apple\\n\
+/fuck(er|ing)?/ig → hold$1 hands\
+";
+
+buttonsElem = "\
+<div class=formgroup1 id=text_replace>\
+    <select id=text_replace_select>\
+        <option value=0>regular</option>\
+        <option value=1>regex</option>\
+    </select>\
+    <input type=input id=text_replace_matcher placeholder=\"Matching text\" title=\"Matching text\" />\
+    <input type=input id=text_replace_replacer placeholder=\"Replacement text\" title=\"Replacement text\" />\
+    <br /><br />\
+    <input type=button id=text_replace_add value=add />\
+    <input type=button id=text_replace_show value=edit />\
+    <input type=checkbox name=tw title=\"disable cursing\" />\
+    <input type=checkbox name=ts title=\"enable stuttering\" />\
+    <input type=checkbox name=tr title=\"disable replacing\" />\
+    <br /><br />\
+    <a href=\"javascript:alert('" + examples + "');\">Examples</a>\
+</div>";
+
+textStyle = "\
+#text_replace input[type='button'], #text_replace select {\
+    background-color: #1b1d1f;\
+    color: #b0b0b0;\
+    border: 1px solid #707070;\
+    font-size: 9pt;\
+    font-family: arial;\
+    cursor: pointer;\
+}\
+\
+#text_replace input[type='button']:hover, #text_replace select:hover {\
+    background-color: #17668a;\
+    border: 1px solid #56aacd;\
+}\
+\
+#text_replace input[type='checkbox'] {\
+    margin-left: 5px;\
+}\
+";
 
 // isUpper :: Char -> Bool
 function isUpper(x){
@@ -182,11 +218,92 @@ function escapeRegExp(str) {
     return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
 }
 
-// censor :: IO ()
-function censor(){
-    var elem = document.getElementById("ctl00_mainContent_postForm_skin_body");
-    elem.value = elem.value.replace('­', "");
-    return true;
+// addDict :: IO ()
+function addDict(){
+    var obj;
+    var opts = document.getElementById("text_replace_select").children;
+    var opt;
+    var matcher = document.getElementById("text_replace_matcher");
+    var replacer = document.getElementById("text_replace_replacer");
+    for (e in opts)
+        if (opts[e].selected)
+            opt = opts[e].value == 0 ? "regular" : "regex";
+    try {
+        obj = JSON.parse(localStorage[storage + opt]);
+    } catch(e) {
+        obj = {};
+    }
+    obj[matcher.value] = replacer.value;
+    localStorage[storage + opt] = JSON.stringify(obj);
+    matcher.value = "";
+    replacer.value = "";
+}
+
+// showDict :: IO ()
+function showDict(){
+    var obj;
+    var opts = document.getElementById("text_replace_select").children;
+    var opt;
+    for (e in opts)
+        if (opts[e].selected)
+            opt = opts[e].value == 0 ? "regular" : "regex";
+    try {
+        var str = localStorage[storage + opt];
+        JSON.parse(str);
+        obj = str;
+    } catch(e) {
+        obj = "{}";
+    }
+    var wrap = document.createElement("div");
+    var text = document.createElement("textarea");
+    wrap.style.width = "100%";
+    wrap.style.height = "100%";
+    wrap.style.backgroundColor = "rgba(0, 0, 0, 0.7)";
+    wrap.style.position = "fixed";
+    wrap.style.top = "0";
+    wrap.style.zIndex = "3939";
+    text.style.maxWidth = "640px";
+    text.style.maxHeight = "480px";
+    text.style.width = "640px";
+    text.style.height = "480px";
+    text.style.display = "block";
+    text.align = "center";
+    wrap.addEventListener("click",
+        function(e){
+            try {
+                var o = JSON.parse(text.value);
+                localStorage[storage + opt] = text.value;
+            } catch(e) {
+                if (!confirm("Incorrect JSON. Do you still want to save? This will reset `" + opt + "' to an empty dictionary."))
+                    return false;
+                else localStorage[storage + opt] = "{}";
+            }
+            this.parentNode.removeChild(this);
+        }
+    );
+    text.addEventListener("click",
+        function(e){
+            if (e && e.stopPropagation) e.stopPropagation();
+            else e.cancelBubble = true;
+            return false;
+        }
+    );
+    text.value = obj;
+    wrap.appendChild(text);
+    document.getElementsByTagName("body")[0].appendChild(wrap);
+    text.focus();
+    text.select();
+}
+
+// toggleOpt :: IO ()
+function toggleOpt(){
+    localStorage[storage + this.name] = this.checked;
+    if (this.name == "tw"){
+        if (this.checked) censor();
+        else uncensor();
+    } else if (this.name == "ts"){
+        if (this.checked) uncensor();
+    }
 }
 
 // stutter :: String -> IO String
@@ -212,62 +329,119 @@ function copyCase(strx, stry){
     }
 }
 
+// censor :: IO ()
+function censor(){
+    var elem = document.getElementById("ctl00_mainContent_postForm_skin_body");
+    elem.value = elem.value.replace(/­/g, "");
+    return true;
+}
+
 // uncensor :: IO ()
 function uncensor(){
-    var elem = document.getElementById("ctl00_mainContent_postForm_skin_body");
-    var txt = elem.value;
-    var dict = {};
-    for (i in matchtypes){
-        try {
-            var rs = JSON.parse(localStorage[storage + matchtypes[i]]);
-            dict[matchtypes[i]] = rs;
-        } catch(e){
-            console.log("Error parsing `" + matchtypes[i] + "': " + e);
-        }
-    }
-    for (t in dict){
-        if (t == "regular"){
-            console.log("Regular!");
-            for (i in dict[t]){
-                var match = new RegExp(escapeRegExp(i), "ig");
-                txt = txt.replace(match, c(flip(copyCase), dict[t][i]));
-            }
-        } else if (t == "regex"){
-            console.log("Regex!");
+    var br = true;
+    try {
+        if (JSON.parse(localStorage[storage + "tr"]))
+            br = false;
+    } catch(e) {}
+    if (br){
+        var elem = document.getElementById("ctl00_mainContent_postForm_skin_body");
+        var txt = elem.value;
+        var dict = {};
+        for (i in matchtypes){
             try {
+                var rs = JSON.parse(localStorage[storage + matchtypes[i]]);
+                dict[matchtypes[i]] = rs;
+            } catch(e){
+                console.log("Error parsing `" + matchtypes[i] + "': " + e);
+            }
+        }
+        for (t in dict){
+            if (t == "regular"){
                 for (i in dict[t]){
-                    var tmp = i.split('/').splice(1);
-                    var regex = tmp.splice(0, tmp.length - 1).join('/');
-                    var args = tmp.splice(-1);
-                    var match = new RegExp(regex, args);
+                    var match = new RegExp(escapeRegExp(i), "ig");
                     txt = txt.replace(match, c(flip(copyCase), dict[t][i]));
                 }
-            } catch(e){
-                console.log("Incorrect RegExp pattern: " + i);
+            } else if (t == "regex"){
+                try {
+                    for (i in dict[t]){
+                        var tmp = i.split('/').splice(1);
+                        var regex = tmp.splice(0, tmp.length - 1).join('/');
+                        var args = tmp.splice(-1);
+                        var match = new RegExp(regex, args);
+                        txt = txt.replace(match, c(flip(copyCase), dict[t][i]));
+                    }
+                } catch(e){
+                    console.log("Incorrect RegExp pattern: " + i);
+                }
+            } else if (t == "random"){
+                // TODO
             }
         }
     }
     if (window.location.href.match(/https?:\/\/\S+.bungie.net\/fanclub/i)){
-        console.log("Swear words!");
-        for (i in swearWords){
-            var match = new RegExp(escapeRegExp(i), "ig");
-            txt = txt.replace(match, c(flip(copyCase), swearWords[i]));
+        var b = true;
+        try {
+            if (JSON.parse(localStorage[storage + "tw"]))
+                b = false;
+        } catch(e) {}
+        if (b){
+            for (i in swearWords){
+                var match = new RegExp(escapeRegExp(i), "ig");
+                txt = txt.replace(match, c(flip(copyCase), swearWords[i]));
+            }
         }
     }
+    try {
+        if (JSON.parse(localStorage[storage + "ts"]))
+            txt = stutter(txt);
+    } catch(e) {}
     elem.value = txt;
     return true;
 }
 
+// userInterface :: IO ()
+function userInterface(){
+    var e = document.getElementById("ctl00_mainContent_postForm_skin_bodyPanel");
+    if (e.nextSibling){
+        var p = document.createElement("p");
+        p.appendChild(e.nextSibling);
+        p.innerHTML += buttonsElem;
+        var elem = p.children[0];
+        e.parentNode.insertBefore(elem, e.nextSibling);
+    }
+    else {
+        e.parentNode.innerHTML += buttonsElem;
+    }
+    var style = document.createElement("style");
+    style.type = "text/css";
+    style.innerHTML = textStyle;
+    document.getElementsByTagName("head")[0].appendChild(style);
+}
+
 // bindings :: IO ()
 function bindings(){
-    var previewButton = document.getElementById("ctl00_mainContent_postForm_skin_previewButton");
-    var submitButton = document.getElementById("ctl00_mainContent_postForm_skin_previewButton");
     var textArea = document.getElementById("ctl00_mainContent_postForm_skin_body");
+    var showButton = document.getElementById("text_replace_show");
+    var addButton = document.getElementById("text_replace_add");
+    var checkBoxes = document.getElementById("text_replace").children;
     textArea.addEventListener("blur", uncensor);
+    showButton.addEventListener("click", showDict);
+    addButton.addEventListener("click", addDict);
+    for (e in checkBoxes){
+        if (checkBoxes[e].type == "checkbox"){
+            var n = checkBoxes[e].name;
+            try {
+                if (JSON.parse(localStorage[storage + n]))
+                    checkBoxes[e].checked = true;
+            } catch(e) {}
+            checkBoxes[e].addEventListener("change", toggleOpt);
+        }
+    }
 }
 
 // main :: IO ()
 function main(){
+    userInterface();
     bindings();
 }
 
