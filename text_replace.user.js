@@ -2,7 +2,7 @@
 // @name            text_replace
 // @namespace       https://github.com/Shou-/text_replace
 // @description     Replace text on submit on Bungie.net
-// @version         0.419
+// @version         0.420
 // @include         http*://*bungie.net/*createpost.aspx*
 // @include         http*://*bungie.net*/Forums/posts.aspx*
 // @include         http*://*bungie.net/Account/Profile.aspx?msgID=*
@@ -630,7 +630,7 @@ function uncensor(){
                     b = false;
             } catch(e) {}
             if (b){
-                regularReplace(swearWords, txt);
+                txt = regularReplace(swearWords, txt);
             }
         }
         try {
