@@ -2,7 +2,7 @@
 // @name            text_replace
 // @namespace       https://github.com/Shou-/text_replace
 // @description     Replace text on submit on Bungie.net
-// @version         0.418
+// @version         0.419
 // @include         http*://*bungie.net/*createpost.aspx*
 // @include         http*://*bungie.net*/Forums/posts.aspx*
 // @include         http*://*bungie.net/Account/Profile.aspx?msgID=*
@@ -29,6 +29,8 @@
 //          - `words str` then match? What about "a[b]c[/b]d"? That's one word.
 // - Stuttering breaks everything. Ignore URLs and BBCode.
 //      - This should be possible in the `stutter' function itself.
+// - WebForm stuff doesn't work in Chrome.
+//      - Use pure AJAX.
 
 var storage = "text_replace0";
 var replacers = { "0": "words"
@@ -581,7 +583,6 @@ function uncensor(){
         if (JSON.parse(localStorage[storage + "tr"]))
             br = false;
     } catch(e) {}
-    // This is a mess and looks like crap.
     for (var x = 0; x < elems.length; x++){
         var txt = elems[x].value;
         if (br){
@@ -598,13 +599,25 @@ function uncensor(){
             for (t in dict){
                 if (t == "words"){
                     console.log("uncensor: Replacing words.");
-                    txt = wordsReplace(dict[t], txt);
+                    try {
+                        txt = wordsReplace(dict[t], txt);
+                    } catch(e) {
+                        console.log("uncensor: wordReplace error: " + e);
+                    }
                 } else if (t == "regular"){
                     console.log("uncensor: Replacing regular.");
-                    txt = regularReplace(dict[t], txt);
+                    try {
+                        txt = regularReplace(dict[t], txt);
+                    } catch(e){
+                        console.log("uncensor: regularReplace error: " + e);
+                    }
                 } else if (t == "regex"){
                     console.log("uncensor: Replacing regex.");
-                    txt = regexReplace(dict[t], txt);
+                    try {
+                        txt = regexReplace(dict[t], txt);
+                    } catch(e) {
+                        console.log("uncensor: regexReplace error: " + e);
+                    }
                 } else if (t == "random"){
                     // TODO
                 }
@@ -617,7 +630,7 @@ function uncensor(){
                     b = false;
             } catch(e) {}
             if (b){
-                wordsReplace(swearWords, txt);
+                regularReplace(swearWords, txt);
             }
         }
         try {
@@ -640,7 +653,6 @@ function WebForm(type, buttonType){
     }
     if (formtype != undefined){
         uncensor();
-        // ctl00$mainContent$messageForm$skin$previewButton
         WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions("ctl00$mainContent$" + type + "Form$skin$" + buttonType, "", true, formtype, "", false, true));
     } else {
         console.log("WebForm: This `type' is unknown.");
