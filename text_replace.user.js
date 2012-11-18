@@ -2,7 +2,7 @@
 // @name            text_replace
 // @namespace       https://github.com/Shou-/text_replace
 // @description     Replace text on submit on Bungie.net
-// @version         0.39
+// @version         0.418
 // @include         http*://*bungie.net/*createpost.aspx*
 // @include         http*://*bungie.net*/Forums/posts.aspx*
 // @include         http*://*bungie.net/Account/Profile.aspx?msgID=*
@@ -19,8 +19,6 @@
 // TODO:
 // - Random/several replacements.
 // - Unicode strip?
-// - Entry deletion button.
-// - Make it work for messages and topics.
 // - Proper help pop-up.
 
 // FIXME:
@@ -31,7 +29,6 @@
 //          - `words str` then match? What about "a[b]c[/b]d"? That's one word.
 // - Stuttering breaks everything. Ignore URLs and BBCode.
 //      - This should be possible in the `stutter' function itself.
-// - Convert old Object dicts to List dicts.
 
 var storage = "text_replace0";
 var replacers = { "0": "words"
