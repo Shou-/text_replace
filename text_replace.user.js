@@ -391,6 +391,60 @@ function editDict(){
     } catch(e) {
         list = "[]";
     }
+
+    var f = function(e){
+        var text = this.children[0].children[0];
+        try {
+            var o = JSON.parse(text.value);
+            if (!(o instanceof Array))
+                text.value = JSON.stringify(convertOldDict(o));
+            localStorage[storage + opt] = text.value;
+        } catch(e) {
+            if (!confirm("Incorrect JSON. Do you still want to save? This will reset `" + opt + "' to an empty dictionary."))
+                return false;
+            else localStorage[storage + opt] = "[]";
+        }
+        this.parentNode.removeChild(this);
+        }
+
+    mkEditor(list, f);
+}
+
+// mergeDict :: IO ()
+function mergeDict(){
+    var opts = document.getElementById("text_replace_select").children;
+    var opt;
+    for (e in opts)
+        if (opts[e].selected)
+            opt = replacers[opts[e].value];
+
+    var f = function(e){
+        var text = this.children[0].children[0];
+        try {
+            var o = JSON.parse(text.value);
+            console.log(o);
+            if (!(o instanceof Array))
+                o = convertOldDict(o);
+            console.log(o);
+            var odict = JSON.parse(localStorage[storage + opt]);
+            o = mergeDicts(odict, o);
+            console.log(o);
+            localStorage[storage + opt] =
+                JSON.stringify(o);
+        } catch(e) {
+            console.log("mergeDict: " + e);
+            if (!confirm("Incorrect JSON. Do you still want to save? This will reset `" + opt + "' to an empty dictionary."))
+                return false;
+            else localStorage[storage + opt] = "[]";
+        }
+        this.parentNode.removeChild(this);
+        }
+
+    mkEditor("[]", f);
+}
+
+// mkEditor :: String -> (Event -> IO ()) -> IO ()
+function mkEditor(str, f){
     var wrap = document.createElement("div");
     var iwrap = document.createElement("div");
     var text = document.createElement("textarea");
@@ -409,29 +463,15 @@ function editDict(){
     text.style.height = "480px";
     text.style.display = "block";
     text.align = "center";
-    wrap.addEventListener("click",
-        function(e){
-            try {
-                var o = JSON.parse(text.value);
-                if (!(o instanceof Array))
-                    text.value = JSON.stringify(convertOldDict(o));
-                localStorage[storage + opt] = text.value;
-            } catch(e) {
-                if (!confirm("Incorrect JSON. Do you still want to save? This will reset `" + opt + "' to an empty dictionary."))
-                    return false;
-                else localStorage[storage + opt] = "[]";
-            }
-            this.parentNode.removeChild(this);
-        }
-    );
-    text.addEventListener("click",
-        function(e){
-            if (e && e.stopPropagation) e.stopPropagation();
-            else e.cancelBubble = true;
-            return false;
-        }
-    );
-    text.value = list;
+    text.value = str;
+
+    wrap.addEventListener("click", f);
+    text.addEventListener("click", function(e){
+        if (e && e.stopPropagation) e.stopPropagation();
+        else e.cancelBubble = true;
+        return false;
+    });
+
     iwrap.appendChild(text);
     wrap.appendChild(iwrap);
     document.getElementsByTagName("body")[0].appendChild(wrap);
@@ -642,9 +682,11 @@ function bindings(){
     var showButton = document.getElementById("text_replace_edit");
     var addButton = document.getElementById("text_replace_add");
     var remButton = document.getElementById("text_replace_rem");
+    var mergeButton = document.getElementById("text_replace_merge");
     var checkBoxes = document.getElementById("text_replace").children;
 
     showButton.addEventListener("click", editDict);
+    mergeButton.addEventListener("click", mergeDict);
     addButton.addEventListener("click", addDict);
     remButton.addEventListener("click", remDict);
 
