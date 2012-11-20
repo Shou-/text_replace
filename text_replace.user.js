@@ -2,7 +2,7 @@
 // @name            text_replace
 // @namespace       https://github.com/Shou-/text_replace
 // @description     Replace text on submit on Bungie.net
-// @version         0.420
+// @version         0.518
 // @include         http*://*bungie.net/*createpost.aspx*
 // @include         http*://*bungie.net*/Forums/posts.aspx*
 // @include         http*://*bungie.net/Account/Profile.aspx?msgID=*
@@ -20,6 +20,8 @@
 // - Random/several replacements.
 // - Unicode strip?
 // - Proper help pop-up.
+// - Remove swearWords entries which are already bypassed by a previous word.
+//      - anal -> analingus, analsex
 
 // FIXME:
 // - Words in URLs are replaced as well. This is a cute butt.
@@ -30,7 +32,10 @@
 // - Stuttering breaks everything. Ignore URLs and BBCode.
 //      - This should be possible in the `stutter' function itself.
 // - WebForm stuff doesn't work in Chrome.
-//      - Use pure AJAX.
+//      - Make the button events add the javascript:WebForm href after uncensor
+//        then remove the userscript added button events and fire a "click"
+//        event on that button to.
+//          - Should werk in Chrome
 
 var storage = "text_replace0";
 var replacers = { "0": "words"
@@ -643,7 +648,7 @@ function uncensor(){
 }
 
 // WebForm :: String -> String -> IO ()
-function WebForm(type, buttonType){
+function WebForm(elem, listener, type, buttonType){
     var formtype;
     if (type == "forum" || type == "post"){
         type = "post";
@@ -653,10 +658,20 @@ function WebForm(type, buttonType){
     }
     if (formtype != undefined){
         uncensor();
-        WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions("ctl00$mainContent$" + type + "Form$skin$" + buttonType, "", true, formtype, "", false, true));
+        var webForm = "javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions(\"ctl00$mainContent$" + type + "Form$skin$" + buttonType + "\", \"\", true, \"" + formtype + "\", \"\", false, true))";
+        elem.href = webForm;
+        elem.removeEventListener("click", listener);
+        //triggerClick(elem);
     } else {
         console.log("WebForm: This `type' is unknown.");
     }
+}
+
+// triggerClick :: Element -> IO ()
+function triggerClick(elem){
+    var evt = document.createEvent("HTMLEvents");
+    evt.initEvent("click", true, true);
+    elem.dispatchEvent(evt);
 }
 
 // userInterface :: IO ()
@@ -704,15 +719,23 @@ function bindings(){
 
     try {
         postSubmit.href = "javascript:;";
-        postSubmit.addEventListener("click", c(c(WebForm, "post"), "submitButton"));
+        postSubmit.addEventListener("click", function(){
+            WebForm(this, arguments.callee, "post", "submitButton");
+        });
         postPreview.href = "javascript:;";
-        postPreview.addEventListener("click", c(c(WebForm, "post"), "previewButton"));
+        postPreview.addEventListener("click", function(){
+            WebForm(this, arguments.callee, "post", "previewButton");
+        });
     } catch(e){
         try {
             msgSubmit.href = "javascript:;";
-            msgSubmit.addEventListener("click", c(c(WebForm, "message"), "submitButton"));
+            msgSubmit.addEventListener("click", function(){
+                WebForm(this, arguments.callee, "message", "submitButton");
+            });
             msgPreview.href = "javascript:;";
-            msgPreview.addEventListener("click", c(c(WebForm, "message"), "previewButton"));
+            msgPreview.addEventListener("click", function(){
+                WebForm(this, arguments.callee, "message", "previewButton");
+            });
         } catch(e){
             console.log("bindings: No elements found.");
         }
