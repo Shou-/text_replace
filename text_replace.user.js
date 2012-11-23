@@ -2,7 +2,7 @@
 // @name            text_replace
 // @namespace       https://github.com/Shou-/text_replace
 // @description     Replace text on submit on Bungie.net
-// @version         0.518
+// @version         0.539
 // @include         http*://*bungie.net/*createpost.aspx*
 // @include         http*://*bungie.net*/Forums/posts.aspx*
 // @include         http*://*bungie.net/Account/Profile.aspx?msgID=*
@@ -31,11 +31,7 @@
 //          - `words str` then match? What about "a[b]c[/b]d"? That's one word.
 // - Stuttering breaks everything. Ignore URLs and BBCode.
 //      - This should be possible in the `stutter' function itself.
-// - WebForm stuff doesn't work in Chrome.
-//      - Make the button events add the javascript:WebForm href after uncensor
-//        then remove the userscript added button events and fire a "click"
-//        event on that button to.
-//          - Should werk in Chrome
+//      - Is currently broken as well? Make it just werk.
 
 var storage = "text_replace0";
 var replacers = { "0": "words"
@@ -44,94 +40,95 @@ var replacers = { "0": "words"
                 }
 
 // swearWords :: [Object]
-var swearWords = new Array();
-swearWords.push({ m: "anal", r: "a­nal" });
-swearWords.push({ m: "analingus", r: "a­nalingus" });
-swearWords.push({ m: "analsex", r: "a­nalsex" });
-swearWords.push({ m: "anus", r: "a­nus" });
-swearWords.push({ m: "ass hole", r: "a­ss hole" });
-swearWords.push({ m: "ass-hole", r: "a­ss-hole" });
-swearWords.push({ m: "asshole", r: "a­sshole" });
-swearWords.push({ m: "bitch", r: "b­itch" });
-swearWords.push({ m: "blowjob", r: "b­lowjob" });
-swearWords.push({ m: "butthole", r: "b­utthole" });
-swearWords.push({ m: "buttplug", r: "b­uttplug" });
-swearWords.push({ m: "buttsex", r: "b­uttsex" });
-swearWords.push({ m: "cannabis", r: "c­annabis" });
-swearWords.push({ m: "chink", r: "c­hink" });
-swearWords.push({ m: "circlejerk", r: "c­irclejerk" });
-swearWords.push({ m: "clit", r: "c­lit" });
-swearWords.push({ m: "clitoris", r: "c­litoris" });
-swearWords.push({ m: "cock", r: "c­ock" });
-swearWords.push({ m: "cocksucker", r: "c­ocksucker" });
-swearWords.push({ m: "cornhole", r: "c­ornhole" });
-swearWords.push({ m: "cum", r: "c­um" });
-swearWords.push({ m: "cumshot", r: "c­umshot" });
-swearWords.push({ m: "cunnilingus", r: "c­unnilingus" });
-swearWords.push({ m: "cunt", r: "c­unt" });
-swearWords.push({ m: "cuntlick", r: "c­untlick" });
-swearWords.push({ m: "cunts", r: "c­unts" });
-swearWords.push({ m: "dickhead", r: "d­ickhead" });
-swearWords.push({ m: "douchebag", r: "d­ouchebag" });
-swearWords.push({ m: "dyke", r: "d­yke" });
-swearWords.push({ m: "f*ck", r: "f­*ck" });
-swearWords.push({ m: "fag", r: "f­ag" });
-swearWords.push({ m: "faggot", r: "f­aggot" });
-swearWords.push({ m: "fcuk", r: "f­cuk" });
-swearWords.push({ m: "fellatio", r: "f­ellatio" });
-swearWords.push({ m: "fok", r: "f­ok" });
-swearWords.push({ m: "fuck", r: "f­uck" });
-swearWords.push({ m: "fucked", r: "f­ucked" });
-swearWords.push({ m: "fucker", r: "f­ucker" });
-swearWords.push({ m: "fucking", r: "f­ucking" });
-swearWords.push({ m: "fudgepacker", r: "f­udgepacker" });
-swearWords.push({ m: "gay", r: "g­ay" });
-swearWords.push({ m: "gook", r: "g­ook" });
-swearWords.push({ m: "hentai", r: "h­entai" });
-swearWords.push({ m: "homo", r: "h­omo" });
-swearWords.push({ m: "kkk", r: "k­k­k" });
-swearWords.push({ m: "klan", r: "k­lan" });
-swearWords.push({ m: "lemonparty", r: "l­emonparty" });
-swearWords.push({ m: "lesbian", r: "l­esbian" });
-swearWords.push({ m: "lesbo", r: "l­esbo" });
-swearWords.push({ m: "masterbat", r: "m­asterbat" });
-swearWords.push({ m: "masturbat", r: "m­asturbat" });
-swearWords.push({ m: "nazi", r: "n­azi" });
-swearWords.push({ m: "nigga", r: "n­igga" });
-swearWords.push({ m: "nigger", r: "n­igger" });
-swearWords.push({ m: "pedophile", r: "p­edophile" });
-swearWords.push({ m: "pedophilia", r: "p­edophilia" });
-swearWords.push({ m: "penis", r: "p­enis" });
-swearWords.push({ m: "phallus", r: "p­hallus" });
-swearWords.push({ m: "phuck", r: "p­huck" });
-swearWords.push({ m: "porn", r: "p­orn" });
-swearWords.push({ m: "pornography", r: "p­ornography" });
-swearWords.push({ m: "pothead", r: "p­othead" });
-swearWords.push({ m: "pron", r: "p­ron" });
-swearWords.push({ m: "pussy", r: "p­ussy" });
-swearWords.push({ m: "queer", r: "q­ueer" });
-swearWords.push({ m: "rape", r: "r­ape" });
-swearWords.push({ m: "rimjob", r: "r­imjob" });
-swearWords.push({ m: "rimming", r: "r­imming" });
-swearWords.push({ m: "sadomasochism", r: "s­adomasochism" });
-swearWords.push({ m: "scheiss", r: "s­cheiss" });
-swearWords.push({ m: "scrotum", r: "s­crotum" });
-swearWords.push({ m: "sexual", r: "s­exual" });
-swearWords.push({ m: "sh!t", r: "s­h!t" });
-swearWords.push({ m: "sh*t", r: "s­h*t" });
-swearWords.push({ m: "shit", r: "s­hit" });
-swearWords.push({ m: "shitt", r: "s­hitt" });
-swearWords.push({ m: "shitting", r: "s­hitting" });
-swearWords.push({ m: "shitty", r: "s­hitty" });
-swearWords.push({ m: "smegma", r: "s­megma" });
-swearWords.push({ m: "spic", r: "s­pic" });
-swearWords.push({ m: "splooge", r: "s­plooge" });
-swearWords.push({ m: "strapon", r: "s­trapon" });
-swearWords.push({ m: "strap-on", r: "s­trap-on" });
-swearWords.push({ m: "tit", r: "t­it" });
-swearWords.push({ m: "tubgirl", r: "t­ubgirl" });
-swearWords.push({ m: "vagina", r: "v­agina" });
-swearWords.push({ m: "vulva", r: "v­ulva" });
+var swearWords = [
+      { m: "anal", r: "a­nal" }
+    , { m: "analingus", r: "a­nalingus" }
+    , { m: "analsex", r: "a­nalsex" }
+    , { m: "anus", r: "a­nus" }
+    , { m: "ass hole", r: "a­ss hole" }
+    , { m: "ass-hole", r: "a­ss-hole" }
+    , { m: "asshole", r: "a­sshole" }
+    , { m: "bitch", r: "b­itch" }
+    , { m: "blowjob", r: "b­lowjob" }
+    , { m: "butthole", r: "b­utthole" }
+    , { m: "buttplug", r: "b­uttplug" }
+    , { m: "buttsex", r: "b­uttsex" }
+    , { m: "cannabis", r: "c­annabis" }
+    , { m: "chink", r: "c­hink" }
+    , { m: "circlejerk", r: "c­irclejerk" }
+    , { m: "clit", r: "c­lit" }
+    , { m: "clitoris", r: "c­litoris" }
+    , { m: "cock", r: "c­ock" }
+    , { m: "cocksucker", r: "c­ocksucker" }
+    , { m: "cornhole", r: "c­ornhole" }
+    , { m: "cum", r: "c­um" }
+    , { m: "cumshot", r: "c­umshot" }
+    , { m: "cunnilingus", r: "c­unnilingus" }
+    , { m: "cunt", r: "c­unt" }
+    , { m: "cuntlick", r: "c­untlick" }
+    , { m: "cunts", r: "c­unts" }
+    , { m: "dickhead", r: "d­ickhead" }
+    , { m: "douchebag", r: "d­ouchebag" }
+    , { m: "dyke", r: "d­yke" }
+    , { m: "f*ck", r: "f­*ck" }
+    , { m: "fag", r: "f­ag" }
+    , { m: "faggot", r: "f­aggot" }
+    , { m: "fcuk", r: "f­cuk" }
+    , { m: "fellatio", r: "f­ellatio" }
+    , { m: "fok", r: "f­ok" }
+    , { m: "fuck", r: "f­uck" }
+    , { m: "fucked", r: "f­ucked" }
+    , { m: "fucker", r: "f­ucker" }
+    , { m: "fucking", r: "f­ucking" }
+    , { m: "fudgepacker", r: "f­udgepacker" }
+    , { m: "gay", r: "g­ay" }
+    , { m: "gook", r: "g­ook" }
+    , { m: "hentai", r: "h­entai" }
+    , { m: "homo", r: "h­omo" }
+    , { m: "kkk", r: "k­k­k" }
+    , { m: "klan", r: "k­lan" }
+    , { m: "lemonparty", r: "l­emonparty" }
+    , { m: "lesbian", r: "l­esbian" }
+    , { m: "lesbo", r: "l­esbo" }
+    , { m: "masterbat", r: "m­asterbat" }
+    , { m: "masturbat", r: "m­asturbat" }
+    , { m: "nazi", r: "n­azi" }
+    , { m: "nigga", r: "n­igga" }
+    , { m: "nigger", r: "n­igger" }
+    , { m: "pedophile", r: "p­edophile" }
+    , { m: "pedophilia", r: "p­edophilia" }
+    , { m: "penis", r: "p­enis" }
+    , { m: "phallus", r: "p­hallus" }
+    , { m: "phuck", r: "p­huck" }
+    , { m: "porn", r: "p­orn" }
+    , { m: "pornography", r: "p­ornography" }
+    , { m: "pothead", r: "p­othead" }
+    , { m: "pron", r: "p­ron" }
+    , { m: "pussy", r: "p­ussy" }
+    , { m: "queer", r: "q­ueer" }
+    , { m: "rape", r: "r­ape" }
+    , { m: "rimjob", r: "r­imjob" }
+    , { m: "rimming", r: "r­imming" }
+    , { m: "sadomasochism", r: "s­adomasochism" }
+    , { m: "scheiss", r: "s­cheiss" }
+    , { m: "scrotum", r: "s­crotum" }
+    , { m: "sexual", r: "s­exual" }
+    , { m: "sh!t", r: "s­h!t" }
+    , { m: "sh*t", r: "s­h*t" }
+    , { m: "shit", r: "s­hit" }
+    , { m: "shitt", r: "s­hitt" }
+    , { m: "shitting", r: "s­hitting" }
+    , { m: "shitty", r: "s­hitty" }
+    , { m: "smegma", r: "s­megma" }
+    , { m: "spic", r: "s­pic" }
+    , { m: "splooge", r: "s­plooge" }
+    , { m: "strapon", r: "s­trapon" }
+    , { m: "strap-on", r: "s­trap-on" }
+    , { m: "tit", r: "t­it" }
+    , { m: "tubgirl", r: "t­ubgirl" }
+    , { m: "vagina", r: "v­agina" }
+    , { m: "vulva", r: "v­ulva" }
+    ]
 
 // examples :: String
 examples = "Regular:\\n\
@@ -502,7 +499,7 @@ function stutter(x){
     var f = function(s){
         var n = Math.floor(Math.random() * Math.floor(s.length / 2));
         if (n == 0) return s;
-        else if (n.match(/^\[\/?(i|b|u|url|quote)\]/i)) return s;
+        else if (s.match(/\[\/?(i|b|u|url|quote)\]/i)) return s;
         else return f(s.slice(0, n)) + '-' + s;
     }
     return map(f, x.split(' ')).join(' ');
@@ -757,6 +754,7 @@ function bindings(){
 function main(){
     userInterface();
     bindings();
+    console.log(stutter("I like to eat bananas for dinner. Yeah."));
 }
 
 main();
